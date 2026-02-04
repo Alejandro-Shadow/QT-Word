@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QStatusBar, QDockWidget, QLineEdit, QPushButton, QVBoxLayout, QWidget
 )
 from voz import escuchar_comando
+from contadorWidget import WordCounterWidget
 from PySide6.QtGui import QAction, QIcon, QKeySequence, QTextCursor, QTextImageFormat
 from PySide6.QtCore import QSize, Qt
 import sys
@@ -104,6 +105,7 @@ class VentanaPrincipal(QMainWindow):
         accion_reemplazar.triggered.connect(self.reemplazar_texto)
         Search_Replace.addAction(accion_reemplazar)
 
+
         # <-- Acción para reconocimiento de voz -->
         accion_voz = QAction(QIcon.fromTheme("media-record"), "Voz", self)
         accion_voz.setStatusTip("Escuchar comando de voz")
@@ -150,12 +152,25 @@ class VentanaPrincipal(QMainWindow):
 
 
     def configurar_barra_estado(self):
-        # <-- Barra de Estado -->
         self.barra_estado = QStatusBar()
         self.setStatusBar(self.barra_estado)
         self.barra_estado.showMessage("Listo")
-        self.Contar_palabras = QLabel("Palabras: 0")
-        self.barra_estado.addPermanentWidget(self.Contar_palabras)
+
+    
+        self.contador_widget = WordCounterWidget(
+        wpm=200,                      
+        mostrarPalabras=True,
+        mostrarCaracteres=True,
+        mostrarTiempoLectura=True,
+        parent=self
+    )
+
+    
+        self.barra_estado.addPermanentWidget(self.contador_widget)
+
+    
+        self.contador_widget.conteoActualizado.connect(self.manejar_conteo_actualizado)
+
 
 
 
@@ -239,9 +254,9 @@ class VentanaPrincipal(QMainWindow):
             self.barra_estado.showMessage(f"Letra cambiada {nueva_letra.family()}", 3000)
 
     def actualizar_contador(self):
-        cursor = self.texto_dock.toPlainText().strip().split()
-        cantidad = len(cursor)
-        self.Contar_palabras.setText(f"palabras: {cantidad}")
+        texto = self.texto_dock.toPlainText()
+        self.contador_widget.update_from_text(texto)
+
 
     def buscar_texto(self):
         self.dock_busqueda.show()
@@ -328,6 +343,15 @@ class VentanaPrincipal(QMainWindow):
 
         else:
             self.barra_estado.showMessage(f"Comando no reconocido: {comando}", 3000)
+    
+    def manejar_conteo_actualizado(self, palabras: int, caracteres: int):
+        """
+        ConteoActualizado, cada vez que el texto cambie se ejecutara.
+        """
+        self.barra_estado.showMessage(
+        f"Texto actualizado: {palabras} palabras, {caracteres} caracteres", 2000
+    )
+
 
 
 
